@@ -20,6 +20,7 @@ chmod +x \
   "${SCRIPT_DIR}/verify_coverage.sh" \
   "${SCRIPT_DIR}/setup.sh" \
   "${REPO_ROOT}/.githooks/pre-commit" \
+  "${REPO_ROOT}/.githooks/post-commit" \
   "${REPO_ROOT}/.githooks/post-checkout" \
   "${REPO_ROOT}/.githooks/post-merge" \
   "${REPO_ROOT}/.githooks/post-rewrite"
@@ -37,13 +38,10 @@ git config filter.repo-crypt.required true
 git config diff.repo-crypt.textconv "${SCRIPT_DIR}/textconv.sh"
 
 echo "repo-crypt: git filters and hooks installed" >&2
-echo "repo-crypt: next — enter your key (cached only under .git/, never committed)" >&2
-
-"${SCRIPT_DIR}/unlock.sh" --force
+echo "repo-crypt: you will be prompted for the key on every git add/commit/pull/checkout" >&2
 
 echo "" >&2
 echo "Done. Workflow:" >&2
-echo "  • commit/add  → prompts for key if needed, encrypts every non-exempt file" >&2
-echo "  • pull/checkout/merge → prompts for key if needed, decrypts into the working tree" >&2
-echo "  • .gitencrypt/lock.sh   → forget the local key" >&2
-echo "  • .gitencrypt/unlock.sh → re-enter the key and decrypt" >&2
+echo "  • every git add/commit/pull/checkout → enter key once for that command" >&2
+echo "  • key is wiped when the command finishes (not stored)" >&2
+echo "  • .gitencrypt/unlock.sh → decrypt working tree, then forget the key" >&2

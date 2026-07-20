@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# After merge/pull, ensure key is present (smudge may already have prompted).
+# After merge/pull: drop the ephemeral key (smudge already prompted during checkout).
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck source=../.gitencrypt/lib.sh
 source "${REPO_ROOT}/.gitencrypt/lib.sh"
 
-ensure_key "post-merge (pull)"
+clear_key

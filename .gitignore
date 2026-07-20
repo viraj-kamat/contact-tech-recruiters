@@ -1,0 +1,10 @@
+# Local-only / junk — never commit
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+.git/repo-crypt/
+
+# Key material must never be committed if it ever lands outside .git/
+*.key
+repo-crypt.key

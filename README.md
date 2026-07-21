@@ -1,4 +1,4 @@
-# contact_recruiters
+# contact_tech_recruiters
 
 Sensitive project files live in an encrypted vault. Git only stores ciphertext. Day-to-day work happens in a local `decrypted/` folder that is gitignored.
 

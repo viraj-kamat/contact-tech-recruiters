@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Decrypt encrypted/vault.enc into decrypted/ (gitignored working tree).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEC="${ROOT}/decrypted"
+ENC_DIR="${ROOT}/encrypted"
+VAULT="${ENC_DIR}/vault.enc"
+OPENSSL_BIN="${REPO_CRYPT_OPENSSL:-openssl}"
+
+if [[ ! -f "${VAULT}" ]]; then
+  echo "unlock: missing ${VAULT}" >&2
+  echo "unlock: run ./add on a machine that has the plaintext working tree first." >&2
+  exit 1
+fi
+
+if [[ -n "${REPO_CRYPT_KEY:-}" ]]; then
+  KEY="${REPO_CRYPT_KEY}"
+else
+  if [[ ! -r /dev/tty ]]; then
+    echo "unlock: no TTY. Set REPO_CRYPT_KEY or run from a terminal." >&2
+    exit 1
+  fi
+  echo "unlock: enter passkey to decrypt encrypted/vault.enc → decrypted/" >&2
+  read -r -s -p "Passkey: " KEY </dev/tty
+  echo >&2
+  if [[ -z "${KEY}" ]]; then
+    echo "unlock: empty passkey refused" >&2
+    exit 1
+  fi
+fi
+
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "${TMPDIR}"' EXIT
+
+decrypt() {
+  if ENC_PASS="${KEY}" "${OPENSSL_BIN}" enc -aes-256-cbc -d -pbkdf2 \
+    -pass env:ENC_PASS -in "${VAULT}" -out "${TMPDIR}/payload.tar" 2>/dev/null; then
+    return 0
+  fi
+  ENC_PASS="${KEY}" "${OPENSSL_BIN}" enc -aes-256-cbc -d -md sha256 \
+    -pass env:ENC_PASS -in "${VAULT}" -out "${TMPDIR}/payload.tar"
+}
+
+if ! decrypt; then
+  echo "unlock: decryption failed (wrong passkey?)" >&2
+  exit 1
+fi
+
+if ! tar -tf "${TMPDIR}/payload.tar" >/dev/null 2>&1; then
+  echo "unlock: decrypted data is not a valid archive (wrong passkey?)" >&2
+  exit 1
+fi
+
+rm -rf "${DEC}"
+mkdir -p "${DEC}"
+tar -C "${DEC}" -xf "${TMPDIR}/payload.tar"
+
+echo "unlock: restored working tree at ${DEC}" >&2
+echo "unlock: edit files there, then run ./add before git commit" >&2

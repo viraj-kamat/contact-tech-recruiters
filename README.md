@@ -1,2 +1,49 @@
-REPOCRYPT1
-U2FsdGVkX18snK9uH6ZoXB8pD9ZAfjBBBKOV/E9pTwfNvgRRcLixw1B1zmx5CCz90FvWaNQgXc9RIhJ1lAabzujyUKIieOmDLb3gCqxwlgGokOFhXhDMAcyuBw2SkLl5OEzD4f5Jd1cpSJT1kkaYC1JWgOxsXN2p/rg0l4OHvSjGDWPvV8hJpTIESQSWgrpBhkNxy+auxmHXQBXcQ0C1bxlM7Z9LvSH+2xGqLnwnTD0+PTsJ8y1mH/EjDSAfBjxfy/9hhfzElPEdc4XZuU+UmaWa8UB2t7eR3t7sNmGqiHiaYU/kEaU/YVt7jFNeuWnZrJMI1V0hO4EoYskFC4zZoWuCGdzBVvXqqoF0PvM6PIVfSCaOOmE+HmO4NremZc5JxcqpiYHIbHFvlKSB36I7++94t3r6v86oAFbC8e1eXRWRDKqPbBievc9+LUa/1OqpPA5poeHLN6ZfBcCWBsbNAgIdzyUprhgfjP9L0pIKJbiYXZZ0996NG+eg85bw5ZmcU6hMmrskt7jcUQi8RoLL+gYgYvr1Qfmk1UqBD/jUhZv4OLwx2HbrY9a05n6cAPBYdy/8rV7B3oOdBL7yiNHQGpV5h5rrZ+ZREgTqB/X0Mr/IS8Ov1JTJ3nnCg05hz3ibSGLN99d+CoRR87QZ2ieVEe9NkPLo6GlsT38jzmAF7V7NoLwZRe3TVXKHeL9ewiunN3k4h9yF/4VldEnsYRTw02llFLHxvTJZa+2NsNT8L6hJ15fcc05NlP3lOFsG7NZKQzBE9QVecHMIQIGWVCXn5p0QJ2vjHoMJ47gJyBOiq1sPVFayskTDNCnXodbEwRrol8Itr4lps5dOcdKbauBMR96ZvDYWIXbLmJhbJrteK0ecyQzG4/S/vD2NkWHJFbvZK6UUwjB81JutlGtkxeqLQhrcITT4rUPqysg9ShZQxBpzgofOdwk1vDnDuVEiOlAz/VY6DvWUQ01viC+jz01trJoiqVSK+4T5gaRvwqtRg9LRTg6aFIJ2kQ6earfaHwRFI3fO04HFJm9F+R+AqXPcghCIpqcquzRvkjijEkhMxZMxEdZZzsVnjZHW/v3Nd1ZRWHgbQGkT1RuHHyvGo2Bsjanwk0IWTIo51d60owfLBVOMNl0R8I0ErUcmiYOM3lO321cun6trt9HoheMmlQywEdTJmszyqeayu0jLOSlx0a/hJ34fytmiBKRS4PgkziLQdbLfadXyApxpYwbIeZQRztrYqt5HrRHEccG5WN1GPp1GB1zL+F2CIUTHxcaZ8ZgsdKpHAywOrKndPwkjUFSSdLcAv+75c7OIB9qf7zewJBjf6o+k6hLoMN3dxzvW5cdO8CDrrUwXiZ/Cp87j2+CxO5W7us5K+NNX10TfUJvdEvZ39EeVNju1ATT7ZAjXCUJaRMRyBBHOP5e5aJl+EMhisLwCvqH24AtwbMjtpdRqjArc/eRB27+1jEhSaHYvfmmHGkGRshgAubOOf99qEy39Gg/wxLFgwhzhKUTLTNA0FQVxzBCOiYpAfkwKZmptzEyo6hAsWEBmPcp+tZSZ4Nk+11juaWYslJcCKEbrXdouzVi/+ATQEpYDOqKDHQRwn5DSQmdLWBZKxpVGnwvweYFYrCZTdiT9gjh2mJplMP/lRwNEDUeIz8f4ZH98shAHGC54ZxQV1HUP5LqaYbhNvHgMc5+1W28BX06F9T62NUCowR27MI6f4tBAyoOf3fkjloJvYp/kPBl6QbwE5jDkzBowIw0eNr9x7bt7HlDZUAXjfic=
+# contact_recruiters
+
+Sensitive project files live in an encrypted vault. Git only stores ciphertext. Day-to-day work happens in a local `decrypted/` folder that is gitignored.
+
+## Layout
+
+| Path | Committed? | Purpose |
+|------|------------|---------|
+| `encrypted/vault.enc` | yes | Encrypted archive of the working tree |
+| `decrypted/` | **no** (gitignored) | Plaintext working files after unlock |
+| `./unlock` | yes | Decrypt vault → `decrypted/` |
+| `./add` | yes | Encrypt `decrypted/` → overwrite `encrypted/vault.enc` |
+
+## Workflow
+
+**First time / this machine (you already have plaintext in `decrypted/`):**
+
+```bash
+./add                 # enter passkey (confirm once) → writes encrypted/vault.enc
+git add encrypted add unlock README.md .gitignore
+git commit -m "Store encrypted working tree"
+git push
+```
+
+**Every change:**
+
+```bash
+# edit files under decrypted/
+./add                 # re-encrypt (overwrites encrypted/vault.enc)
+git add encrypted
+git commit -m "Update vault"
+git push
+```
+
+**Fresh clone:**
+
+```bash
+git clone <url>
+cd contact_recruiters
+./unlock              # enter passkey → creates decrypted/
+cd decrypted
+python send_emails.py # run tools from inside decrypted/
+```
+
+## Notes
+
+- Passkey is never stored; you enter it each time you run `./add` or `./unlock`.
+- `./add` fully replaces `encrypted/vault.enc` with a fresh encryption of everything under `decrypted/`.
+- Run Python scripts from `decrypted/` so relative paths like `data/` and `app_pass.enc` resolve correctly.

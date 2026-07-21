@@ -1,10 +1,8 @@
-# Local-only / junk — never commit
+# Local working tree (plaintext) — never commit
+decrypted/
+
+# Local-only / junk
 .venv/
 __pycache__/
 *.py[cod]
 .DS_Store
-.git/repo-crypt/
-
-# Key material must never be committed if it ever lands outside .git/
-*.key
-repo-crypt.key

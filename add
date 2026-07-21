@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Encrypt everything under decrypted/ into encrypted/vault.enc (full overwrite).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEC="${ROOT}/decrypted"
+ENC_DIR="${ROOT}/encrypted"
+VAULT="${ENC_DIR}/vault.enc"
+OPENSSL_BIN="${REPO_CRYPT_OPENSSL:-openssl}"
+
+if [[ ! -d "${DEC}" ]]; then
+  echo "add: missing ${DEC} — create it and put your working files there first." >&2
+  exit 1
+fi
+
+if [[ -z "$(ls -A "${DEC}" 2>/dev/null || true)" ]]; then
+  echo "add: ${DEC} is empty — nothing to encrypt." >&2
+  exit 1
+fi
+
+if [[ -n "${REPO_CRYPT_KEY:-}" ]]; then
+  KEY="${REPO_CRYPT_KEY}"
+else
+  if [[ ! -r /dev/tty ]]; then
+    echo "add: no TTY. Set REPO_CRYPT_KEY or run from a terminal." >&2
+    exit 1
+  fi
+  echo "add: enter passkey to encrypt decrypted/ → encrypted/vault.enc" >&2
+  read -r -s -p "Passkey: " KEY </dev/tty
+  echo >&2
+  read -r -s -p "Confirm passkey: " KEY2 </dev/tty
+  echo >&2
+  if [[ -z "${KEY}" ]]; then
+    echo "add: empty passkey refused" >&2
+    exit 1
+  fi
+  if [[ "${KEY}" != "${KEY2}" ]]; then
+    echo "add: passkeys do not match" >&2
+    exit 1
+  fi
+fi
+
+mkdir -p "${ENC_DIR}"
+TAR="$(mktemp)"
+OUT="$(mktemp)"
+trap 'rm -f "${TAR}" "${OUT}"' EXIT
+
+tar -C "${DEC}" -cf "${TAR}" .
+
+encrypt() {
+  if ENC_PASS="${KEY}" "${OPENSSL_BIN}" enc -aes-256-cbc -e -pbkdf2 \
+    -pass env:ENC_PASS -in "${TAR}" -out "${OUT}" 2>/dev/null; then
+    return 0
+  fi
+  ENC_PASS="${KEY}" "${OPENSSL_BIN}" enc -aes-256-cbc -e -md sha256 \
+    -pass env:ENC_PASS -in "${TAR}" -out "${OUT}"
+}
+
+if ! encrypt; then
+  echo "add: encryption failed" >&2
+  exit 1
+fi
+
+mv -f "${OUT}" "${VAULT}"
+trap 'rm -f "${TAR}"' EXIT
+chmod 600 "${VAULT}" 2>/dev/null || true
+
+echo "add: wrote ${VAULT}" >&2
+echo "add: next — git add encrypted && git commit && git push" >&2

@@ -1,8 +1,0 @@
-# Encrypt every path by default (clean on add/commit, smudge on checkout/pull).
-* filter=repo-crypt diff=repo-crypt
-
-# Bootstrap / policy files must remain plaintext so a fresh clone can unlock.
-.gitattributes !filter !diff
-.gitignore !filter !diff
-.gitencrypt/** !filter !diff
-.githooks/** !filter !diff

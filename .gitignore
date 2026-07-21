@@ -1,7 +1,6 @@
-# Local working tree (plaintext) — never commit
+# Plaintext working tree — never commit
 decrypted/
 
-# Local-only / junk
 .venv/
 __pycache__/
 *.py[cod]

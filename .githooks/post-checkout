@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# After checkout: drop the ephemeral key (smudge already prompted during checkout).
-set -euo pipefail
-
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-# shellcheck source=../.gitencrypt/lib.sh
-source "${REPO_ROOT}/.gitencrypt/lib.sh"
-
-clear_key
